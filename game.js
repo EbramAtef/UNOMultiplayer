@@ -27,7 +27,7 @@ module.exports = class Game {
             {
                 card.type = 0;
                 card.color = 4;
-                if(card.filename.charAt(card.filename.length-2) === '+')
+                if(card.filename.includes('+'))
                     card.value = 1;
                 else
                     card.value = 0;
@@ -168,8 +168,9 @@ module.exports = class Game {
             });
         });
         this.players_minfied = players_minfied;
-        this.players[0].socket.emit("Play");
         this.whoPlayNow = 0;
+        this.players[this.whoPlayNow].socket.emit("Play");
+        this.players[this.whoPlayNow].socket.emit("CanDraw");
         this.direction = 1;
     }
     endgame()
@@ -201,6 +202,7 @@ module.exports = class Game {
                 if(this.whoPlayNow == i)
                 {
                     this.players[i].socket.emit("Play");
+                    this.players[this.whoPlayNow].socket.emit("CanDraw");
                 }
             }
         }
@@ -281,35 +283,76 @@ module.exports = class Game {
                 {
                     this.whoPlayNow = 0;
                 }
-                this.players[this.whoPlayNow].socket.emit("DrawFour",{
-                    cards : this.DrawCard(4)
+                console.log(this.players[this.whoPlayNow].db.username);
+                var c = this.DrawCard(4);
+                this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
+                this.players[this.whoPlayNow].socket.emit("DrawCards",{
+                    cards : c
                 });
             }
-            else
+            else if(cardRecieved.type == 0 && cardRecieved.value == 0)
             {
-                console.log(cardRecieved.value);
+                this.whoPlayNow+=this.direction;
+                if(this.whoPlayNow == -1)
+                {
+                    this.whoPlayNow = this.players.length -1;
+                }
+                else if(this.whoPlayNow == this.players.length)
+                {
+                    this.whoPlayNow = 0;
+                }
+            }
+            if(cardRecieved.type == 1)
+            {
+                if(cardRecieved.val == 1)
+                    this.direction*=-1;
+                this.whoPlayNow+=this.direction;
+                if(this.whoPlayNow == -1)
+                {
+                    this.whoPlayNow = this.players.length -1;
+                }
+                else if(this.whoPlayNow == this.players.length)
+                {
+                    this.whoPlayNow = 0;
+                }
+                switch (cardRecieved.value) {
+                    case 0:
+                        this.players[this.whoPlayNow].socket.emit("Skipped");
+                        this.whoPlayNow+=this.direction;
+                        if(this.whoPlayNow == -1)
+                        {
+                            this.whoPlayNow = this.players.length -1;
+                        }
+                        else if(this.whoPlayNow == this.players.length)
+                        {
+                            this.whoPlayNow = 0;
+                        }
+                        break;
+                    case 2:
+                        var c = this.DrawCard(2);
+                        this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
+                        this.players[this.whoPlayNow].socket.emit("DrawCards",{
+                            cards : c
+                        });
+                        this.players[this.whoPlayNow].socket.emit("Skipped");
+                        this.whoPlayNow+=this.direction;
+                        if(this.whoPlayNow == -1)
+                        {
+                            this.whoPlayNow = this.players.length -1;
+                        }
+                        else if(this.whoPlayNow == this.players.length)
+                        {
+                            this.whoPlayNow = 0;
+                        }
+                        break;
+                }
             }
             
         }
         this.players[this.whoPlayNow].socket.emit("Play");
+        this.players[this.whoPlayNow].socket.emit("CanDraw");
         //remove it form the player hand
         this.players[pl].cards.splice(index,1);
-    }
-    DrawCard(num = 0)
-    {
-        if(num != 0)
-        {
-            var R_cards = [];
-            for(var i = 0;i<num;i++)
-            {
-                R_cards.push(this.cards[0]);
-                this.cards.shift();
-            }
-            return R_cards;
-        }
-        var c = this.cards[0];
-        this.cards.shift();
-        return c;
     }
     /**
      * 
@@ -343,6 +386,45 @@ module.exports = class Game {
      *        2 : green
      *        3 : blue
      */
+    DrawCard(num = 0)
+    {
+        if(num != 0)
+        {
+            var R_cards = [];
+            for(var i = 0;i<num;i++)
+            {
+                R_cards.push(this.cards[0]);
+                this.cards.shift();
+            }
+            return R_cards;
+        }
+        var c = this.cards[0];
+        this.cards.shift();
+        return c;
+    }
+    DrawACard(access_token)
+    {
+        for(var i = 0;i<this.players.length;i++){
+            if(this.players[i].access_token == access_token)
+            {
+                var c = this.DrawCard();
+                this.players[i].cards.push(c);
+                this.players[i].socket.emit("CardDrawn",{
+                    card: c,
+                })
+            }
+        }
+    }
+    CanDraw(cards)
+    {
+        cards.forEach(function(card){
+            if(CardCanBePlayed(card,this.middleCard))
+            {
+                return false;
+            }
+        });
+        return true;
+    }
     CardCanBePlayed(playerCard,midcard)
     {
         if(playerCard.type === 0)

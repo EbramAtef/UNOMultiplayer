@@ -1,5 +1,6 @@
 var cardss = [];
 var pl;
+var deck 
 Gameobject.Boot = function(game){};
 Gameobject.Boot.prototype = {
     preload:function()
@@ -118,6 +119,7 @@ Gameobject.Game.prototype = {
     preload:function()
     {
         game.load.atlas('cards', 'client/img/cards.png', 'client/img/cards.json');
+        game.load.image('back', 'client/img/back.png');
         game.load.image('avatar', 'client/img/user.png');
     },
     create:function()
@@ -134,36 +136,45 @@ Gameobject.Game.prototype = {
         var w = game.world.centerX -((winc*cards.length)/2);
         var y =  game.height - height;
         cards.forEach(function(car){
-            var card = game.add.sprite(w, y, 'cards', car.filename);
-            card.width = width;
-            card.height = height;
-            if(cards.length > 7)
-            {
-                w+=winc;
-            }
-            else
-            {
-                w+= card.width;
-            }
-            card.events.onInputDown.add(cardClicked, this,game);
-            console.log(car);
-            if(CanPlay)
-                if(CardCanBePlayed(car))
-                {
-                    card.inputEnabled = true;
-                }
-                else
-                {
-                    card.alpha = 0.5;
-                }
+            var card = game.add.sprite(0, 0, 'cards', car.filename);
+            card.events.onInputDown.add(cardClicked, this, game);
             card.data = car;
             cardss.push(card);
         });
+        arrangeCards();
+
         var midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
         midcard.width/=1.4;
         midcard.height/=1.4;
-        midcard.x -= midcard.width/2;
+        midcard.x -= midcard.width + 10;
         midcard.y -= midcard.height/2;
+
+        deck = game.add.sprite(game.world.centerX,game.world.centerY,'back');
+        deck.width = midcard.width;
+        deck.height = midcard.height;
+        deck.y -= deck.height/2;
+        deck.x +=10
+        deck.events.onInputDown.add(DrawACard, this);
+        //deck.inputEnabled = true;
+        if(middlecard.type == 0)
+        {
+            switch (middlecard.color) {
+                case 0:
+                    midcard.tint = 0xff0000;
+                    break;                    
+                case 1:
+                    midcard.tint = 0xffff00;
+                    break;                    
+                case 2:
+                    midcard.tint = 0x00ff00;
+                    break;                    
+                case 3:
+                    midcard.tint = 0x0000ff;
+                    break;
+                default:
+                    break;
+            }
+        }
         pl = game.add.group();
 
         switch (players.length) {
@@ -227,15 +238,19 @@ Gameobject.Game.prototype = {
     },
     update:function()
     { 
+        if(CanDraw)
+        {
+            deck.inputEnabled = true;
+        }
+        else
+        {
+            deck.inputEnabled = false;
+        }
         if(CanPlay)
             cardss.forEach(function(car){
                 if(CardCanBePlayed(car.data))
                 {
                     car.inputEnabled = true;
-                }
-                else
-                {
-                    car.alpha = 0.5;
                 }
             });
         else
@@ -248,13 +263,39 @@ Gameobject.Game.prototype = {
             var midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
             midcard.width/=1.4;
             midcard.height/=1.4;
-            midcard.x -= midcard.width/2;
+            midcard.x -= midcard.width + 10;
             midcard.y -= midcard.height/2;
             middlecardchanged =false;
+            if(middlecard.type == 0)
+            {
+                switch (middlecard.color) {
+                    case 0:
+                        midcard.tint = 0xff0000;
+                        break;                    
+                    case 1:
+                        midcard.tint = 0xffff00;
+                        break;                    
+                    case 2:
+                        midcard.tint = 0x00ff00;
+                        break;                    
+                    case 3:
+                        midcard.tint = 0x0000ff;
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
         if(IsnewCards)
         {
-            
+            newCards.forEach(function(car){
+                var card = game.add.sprite(0, 0, 'cards', car.filename);
+                card.events.onInputDown.add(cardClicked, this,game);
+                card.data = car;
+                cardss.push(card);
+            });
+            arrangeCards();
+            IsnewCards = false;
         }
     }
 }
@@ -262,7 +303,14 @@ Gameobject.Game.prototype = {
 function actionOnClick () {
     login();
 }
-
+function DrawACard(e)
+{
+    console.log("click");
+    socket.emit("DrawACard",{
+        id : GameId,
+        access_token : access_token
+    });
+}
 function cardClicked(e,game)
 {
     console.log(e.data.filename);
@@ -318,11 +366,11 @@ function cardClicked(e,game)
         cardss.splice(i,1);
         CanPlay = false;
     }
+    CanDraw = false;
 }
 
 function CardCanBePlayed(playerCard)
 {
-    console.log(middlecard.color);
     if(playerCard.type === 0)
         return true;
     else
@@ -352,6 +400,29 @@ function ColorChosen(val,json)
     cardss.splice(i,1);
     CanPlay = false;
 }
+function arrangeCards()
+{
+    var width = canvas_width/25;
+    var ratio = 240/360;
+    var height = width/ratio;
+    var winc = width*7/cards.length;
+    var w = game.world.centerX -((winc*cardss.length)/2);
+    var y =  game.height - height;
+    cardss.forEach(function(card){
+        card.x = w;
+        card.y = y;
+        card.width = width;
+        card.height = height;
+        if(cards.length > 7)
+        {
+            w+=winc;
+        }
+        else
+        {
+            w+= card.width;
+        }
+    });
+};
 /**
      * 
      * Cards Values Dic

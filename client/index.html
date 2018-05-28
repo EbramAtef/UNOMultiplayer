@@ -18,11 +18,31 @@
     border : none;
     padding : 1vmin;
     }
+    .fullScreen{
+        height: 100vh;
+        background-color: #000000;
+        color : #ffffff;
+        opacity : 0.5;
+        text-align:center;
+        vertical-align:middle;
+        line-height: 100vh;
+        margin  : 0;
+        padding : 0;
+        z-index: 999999;
+        position: fixed;
+        left: 0;
+        top : 0;
+        width: 100vw;
+        display: none;
+    }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.css" />
 </head>
 <body>
     <div id="MainCont">
+    </div>
+    <div class="fullScreen">
+        <h1>Your Turn!</h1>
     </div>
 </body>
 <script src="//code.jquery.com/jquery-3.3.1.min.js"></script>

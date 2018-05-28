@@ -12,3 +12,4 @@ var middlecardchanged=false;
 var IsnewCards = false;
 var newCards;
 var GameId;
+var CanDraw = false;

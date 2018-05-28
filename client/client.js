@@ -46,13 +46,29 @@ socket.on("Play",function()
 {
     CanPlay = true;
     console.log("playing");
+    $(".fullScreen").fadeIn();
+    window.setTimeout(removeFullScreen, 500);
 });
 socket.on("CardPlayed",function(data){
     console.log(data);
     middlecard = data.card;
     middlecardchanged = true;
 });
-socket.on("DrawFour",function(data){
+socket.on("DrawCards",function(data){
+    console.log("DrawCards");
     newCards = data.cards;
     IsnewCards = true;
-})
+});
+socket.on("CardDrawn",function(data){
+    newCards = [data.card];
+    console.log(newCards);
+    IsnewCards = true;
+    CanDraw = false;
+});
+socket.on("CanDraw",function(){
+    CanDraw = true;
+});
+function removeFullScreen()
+{
+    $(".fullScreen").hide();
+}

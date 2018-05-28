@@ -74,11 +74,6 @@ app.post('/Dashboard/StartGame',function(req,res)
             if(players[i].db.id == player.id)
             {
                 game_players.push(players[i]);
-                if(players[i].playing == true)
-                {
-                    console.log("TRYING TO START A GAME WITH PLAYERS ALRADY PLAYING");
-                    return 0;
-                }
                 players[i].playing = true;
             }
         }
@@ -88,7 +83,32 @@ app.post('/Dashboard/StartGame',function(req,res)
     game.start();
     games.push(game);
 });
-
+/*app.post('/Dashboard/StartGame',function(req,res)
+{
+    var game_players = [];
+    var flag = false;
+    req.body.players.forEach(player => {
+        for(var i = 0;i<players.length;i++)
+        {
+            if(players[i].db.id == player.id)
+            {
+                game_players.push(players[i]);
+                if(players[i].playing == true)
+                {
+                    console.log("TRYING TO START A GAME WITH PLAYERS ALRADY PLAYING");
+                    flag = true;
+                }
+                players[i].playing = true;
+            }
+        }
+    });
+    if(game_players.length <2 || flag)
+        return;
+    console.log(cards.length);
+    var game = new Game(game_players,cards);
+    game.start();
+    games.push(game);
+}); */
 //this means when a get request is made to ‘/client’, put all the 
 //static files inside the client folder 
 
@@ -184,6 +204,14 @@ io.sockets.on('connection', function(socket){
             if(game.id == data.id)
             {
                 game.Played(data.card,data.access_token,socket);
+            }
+        })
+    });
+    socket.on("DrawACard",function(data){
+        games.forEach(function(game){
+            if(game.id == data.id)
+            {
+                game.DrawACard(data.access_token);
             }
         })
     });
