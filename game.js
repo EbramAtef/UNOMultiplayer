@@ -109,8 +109,12 @@ module.exports = class Game {
             }
         });
         this.id = Math.floor(new Date() / 1000);
-        this.middleCard = null;
+        this.discardDeck = [];
         console.log("Game Object has been created ID="+this.id);
+    }
+    middleCard()
+    {
+        return this.discardDeck[0];
     }
     shuffle(array)
     {
@@ -154,7 +158,7 @@ module.exports = class Game {
             this.cards = this.shuffle(this.cards);
 
         }
-        this.middleCard = this.cards[0];
+        this.discardDeck.unshift(this.cards[0]);
         this.cards.shift();
         this.players.forEach(player => {
             var temp = players_minfied.filter(function(pl) {
@@ -163,7 +167,7 @@ module.exports = class Game {
             player.socket.emit("Started",{
                 cards: player.cards,
                 players:temp,
-                middleCard : this.middleCard,
+                middleCard : this.middleCard(),
                 id :this.id
             });
         });
@@ -183,7 +187,7 @@ module.exports = class Game {
     {
         console.log("Reconnect Attempt ID="+this.id);
         var pl = this.players_minfied;
-        var mid =  this.middleCard;
+        var mid =  this.middleCard();
         var idga =  this.id;
         for(var i =0;i<this.players.length;i++)
         {
@@ -243,13 +247,13 @@ module.exports = class Game {
             socket.emit("DON'T TRY TO CHEAT!!");
             return;
         }
-        if(!this.CardCanBePlayed(cardRecieved,this.middleCard))
+        if(!this.CardCanBePlayed(cardRecieved,this.middleCard()))
         {
             socket.emit("DON'T TRY TO CHEAT!!");
             return;
         }
         //change the middle card
-        this.middleCard = cardRecieved;
+        this.discardDeck.unshift(cardRecieved);
         //emit it 
         this.players.forEach(player => {
             player.socket.emit("CardPlayed",{
@@ -393,14 +397,41 @@ module.exports = class Game {
             var R_cards = [];
             for(var i = 0;i<num;i++)
             {
-                R_cards.push(this.cards[0]);
-                this.cards.shift();
+                if(this.cards.length > 0)
+                {
+                    R_cards.push(this.cards[0]);
+                    this.cards.shift();
+                }
+                else
+                {
+                    var last  = this.middleCard();
+                    this.discardDeck.shift();
+                    this.cards = copy(this.discardDeck);
+                    this.discardDeck = [];
+                    this.shuffle(this.cards);
+                    R_cards.push(this.cards[0]);
+                    this.cards.shift();
+                }
             }
             return R_cards;
         }
-        var c = this.cards[0];
-        this.cards.shift();
-        return c;
+        if(this.cards.length > 0)
+        {
+            var c = this.cards[0];
+            this.cards.shift();
+            return c;
+        }
+        else
+        {
+            var last  = this.middleCard();
+            this.discardDeck.shift();
+            this.cards = copy(this.discardDeck);
+            this.discardDeck = [];
+            this.shuffle(this.cards);
+            var c = this.cards[0];
+            this.cards.shift();
+            return c;
+        }
     }
     DrawACard(access_token)
     {
@@ -418,7 +449,7 @@ module.exports = class Game {
     CanDraw(cards)
     {
         cards.forEach(function(card){
-            if(CardCanBePlayed(card,this.middleCard))
+            if(CardCanBePlayed(card,this.middleCard()))
             {
                 return false;
             }
