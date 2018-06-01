@@ -4,7 +4,7 @@
 const canvas_width = window.innerWidth; 
 const canvas_height = window.innerHeight;
 console.log( window.devicePixelRatio);
-game = new Phaser.Game(canvas_width, canvas_height, Phaser.WEBGL, 'MainCont');
+game = new Phaser.Game(canvas_width, canvas_height, Phaser.CANVAS, 'MainCont');
 game.state.add('Boot', Gameobject.Boot);
 game.state.add('MainMenu', Gameobject.MainMenu);
 game.state.add('Waiting', Gameobject.Waiting);

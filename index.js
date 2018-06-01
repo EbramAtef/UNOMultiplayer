@@ -1,4 +1,6 @@
 require('dotenv').config();
+var events = require('events');
+var eventEmitter = new events.EventEmitter();
 //import express.js 
 var express = require('express');
 //assign it to variable app 
@@ -65,7 +67,7 @@ app.get('/dashboard/Organise',function(req,res)
         users : users
     });
 });
-app.post('/Dashboard/StartGame',function(req,res)
+/*app.post('/Dashboard/StartGame',function(req,res)
 {
     var game_players = [];
     req.body.players.forEach(player => {
@@ -82,8 +84,8 @@ app.post('/Dashboard/StartGame',function(req,res)
     var game = new Game(game_players,cards);
     game.start();
     games.push(game);
-});
-/*app.post('/Dashboard/StartGame',function(req,res)
+});*/
+app.post('/Dashboard/StartGame',function(req,res)
 {
     var game_players = [];
     var flag = false;
@@ -102,19 +104,29 @@ app.post('/Dashboard/StartGame',function(req,res)
             }
         }
     });
-    if(game_players.length <2 || flag)
+    if(game_players.length < 1 || flag)
         return;
     console.log(cards.length);
     var game = new Game(game_players,cards);
     game.start();
     games.push(game);
-}); */
+});
 //this means when a get request is made to ‘/client’, put all the 
 //static files inside the client folder 
 
 app.use('/client',express.static(__dirname + '/client'));
 app.use('/scripts/input',express.static(__dirname + '/node_modules/@orange-games/phaser-input/build/'));
-
+function GameEnds(gameid)
+{
+    for(var i = 0;i<games.length;i++)
+    {
+        if(games[i].id === gameid)
+        {
+            games.splice(i,1);
+            break;
+        }
+    }
+}
 function Player(socket)
 {
     this.socket = socket;
@@ -203,7 +215,7 @@ io.sockets.on('connection', function(socket){
         games.forEach(function(game){
             if(game.id == data.id)
             {
-                game.Played(data.card,data.access_token,socket);
+                game.Played(data.card,data.access_token,socket,data.UNOFlag);
             }
         })
     });
@@ -212,6 +224,14 @@ io.sockets.on('connection', function(socket){
             if(game.id == data.id)
             {
                 game.DrawACard(data.access_token);
+            }
+        })
+    });
+    socket.on("Pass",function(data){
+        games.forEach(function(game){
+            if(game.id == data.id)
+            {
+                game.Pass(data.access_token);
             }
         })
     });

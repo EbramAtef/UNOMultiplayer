@@ -1,6 +1,8 @@
 var cardss = [];
 var pl;
-var deck 
+var deck;
+var UNOFlag = false;
+var LastCardCount = 0;
 Gameobject.Boot = function(game){};
 Gameobject.Boot.prototype = {
     preload:function()
@@ -121,31 +123,29 @@ Gameobject.Game.prototype = {
         game.load.atlas('cards', 'client/img/cards.png', 'client/img/cards.json');
         game.load.image('back', 'client/img/back.png');
         game.load.image('avatar', 'client/img/user.png');
+        game.load.image('unobutton', 'client/img/uno_button.png');
+        game.load.image('unobuttonPressed', 'client/img/uno_buttonPressed.png');        
+        game.load.image('passbutton', 'client/img/pass_button.png');
+        game.load.image('passbuttonPressed', 'client/img/pass_buttonPressed.png');
     },
     create:function()
     {
+        game.time.advancedTiming = true;
         var background = game.add.sprite(0, 0, 'background');
         background.x = 0;
         background.y = 0;
         background.height = game.height;
         background.width = game.width;
-        var width = canvas_width/25;
-        var ratio = 240/360;
-        var height = width/ratio;
-        var winc = width*7/cards.length;
-        var w = game.world.centerX -((winc*cards.length)/2);
-        var y =  game.height - height;
         cards.forEach(function(car){
             var card = game.add.sprite(0, 0, 'cards', car.filename);
             card.events.onInputDown.add(cardClicked, this, game);
             card.data = car;
             cardss.push(card);
         });
-        arrangeCards();
-
         var midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
-        midcard.width/=1.4;
-        midcard.height/=1.4;
+        midcard.width = canvas_width/9;
+        var ratio = 240/360;
+        midcard.height = midcard.width/ratio;
         midcard.x -= midcard.width + 10;
         midcard.y -= midcard.height/2;
 
@@ -235,17 +235,25 @@ Gameobject.Game.prototype = {
                 break;
         }
         console.log(pl);
+        //UNO Button
+        this.UNO = game.add.sprite(game.width,game.height,"unobutton");
+        this.UNO.x -= this.UNO.width + 50 ;
+        this.UNO.y -= this.UNO.height +50 ;
+        this.UNO.events.onInputDown.add(SetUnoFlag, this);
+        this.UNO.inputEnabled = true;
+        //Pass Button
+        this.Pass = game.add.sprite(0,game.height,"passbutton");
+        this.Pass.x += 50 ;
+        this.Pass.y -= this.Pass.height + 50 ;
+        this.Pass.width = this.UNO.width;
+        this.Pass.height = this.UNO.height;
+        this.Pass.events.onInputDown.add(Passfunc, this);
+        this.Pass.inputEnabled = true;
     },
     update:function()
     { 
-        if(CanDraw)
-        {
-            deck.inputEnabled = true;
-        }
-        else
-        {
-            deck.inputEnabled = false;
-        }
+        arrangeCards();
+        deck.inputEnabled = CanDraw;
         if(CanPlay)
             cardss.forEach(function(car){
                 if(CardCanBePlayed(car.data))
@@ -256,16 +264,15 @@ Gameobject.Game.prototype = {
         else
             cardss.forEach(function(car){
                 car.inputEnabled = false;
-                car.alpha = 1;
             });
         if(middlecardchanged)
         {
             var midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
-            midcard.width/=1.4;
-            midcard.height/=1.4;
+            midcard.width = canvas_width/9;
+            var ratio = 240/360;
+            midcard.height = midcard.width/ratio;
             midcard.x -= midcard.width + 10;
             midcard.y -= midcard.height/2;
-            middlecardchanged =false;
             if(middlecard.type == 0)
             {
                 switch (middlecard.color) {
@@ -285,6 +292,7 @@ Gameobject.Game.prototype = {
                         break;
                 }
             }
+            middlecardchanged = false;
         }
         if(IsnewCards)
         {
@@ -294,12 +302,39 @@ Gameobject.Game.prototype = {
                 card.data = car;
                 cardss.push(card);
             });
-            arrangeCards();
             IsnewCards = false;
         }
+        if(!UNOFlag)
+        {
+            this.UNO.loadTexture("unobutton");
+        }
+        else
+        {
+            this.UNO.loadTexture("unobuttonPressed");
+        }
+    },
+    render : function()
+    {
+        game.debug.text(game.time.fps, 2, 14, "#00ff00");
     }
 }
-
+function SetUnoFlag(e)
+{
+    if(!UNOFlag)
+    {
+        e.loadTexture("unobuttonPressed");
+        UNOFlag = true;
+    }
+}
+function Passfunc(e)
+{
+    console.log("pass");
+    socket.emit("Pass",{
+        id : GameId,
+        access_token : access_token,
+    });
+    CanPlay = false;
+}
 function actionOnClick () {
     login();
 }
@@ -317,12 +352,6 @@ function cardClicked(e,game)
     e.y -= 20;
     if(e.data.type == 0)
     {
-        /*var json = JSON.stringify({
-            card : e.data,
-            id : GameId,
-            access_token : access_token
-        });
-        var json = json.replace(/"/g, '\\"');*/
         var html = '<div class="message"><br><button style="background:#ff0000" class="button" id="0"></button><button style="background:#ffff00" class="button" id="1"></button><button style="background:#00ff00" class="button" id="2"></button><button style="background:#0000ff" class="button" id="3"></button></div>';
         console.log(html);
         $.fancybox.open(html);
@@ -334,7 +363,8 @@ function cardClicked(e,game)
             socket.emit("played",{
                 card : e.data,
                 id : GameId,
-                access_token : access_token
+                access_token : access_token,
+                UNOFlag : UNOFlag
             });
             var i;
             for(i = 0;i<cardss.length;i++)
@@ -346,6 +376,7 @@ function cardClicked(e,game)
             cardss[i].destroy();
             cardss.splice(i,1);
             CanPlay = false;
+            UNOFlag = false;
         });
     }
     else
@@ -353,7 +384,8 @@ function cardClicked(e,game)
         socket.emit("played",{
             card : e.data,
             id : GameId,
-            access_token : access_token
+            access_token : access_token,
+            UNOFlag : UNOFlag
         });
         var i;
         for(i = 0;i<cardss.length;i++)
@@ -365,6 +397,7 @@ function cardClicked(e,game)
         cardss[i].destroy();
         cardss.splice(i,1);
         CanPlay = false;
+        UNOFlag = false;
     }
     CanDraw = false;
 }
@@ -402,10 +435,12 @@ function ColorChosen(val,json)
 }
 function arrangeCards()
 {
-    var width = canvas_width/25;
+    if(LastCardCount == cardss.length)
+        return;
+    var width = canvas_width/15;
     var ratio = 240/360;
     var height = width/ratio;
-    var winc = width*7/cards.length;
+    var winc = width*7/cardss.length;
     var w = game.world.centerX -((winc*cardss.length)/2);
     var y =  game.height - height;
     cardss.forEach(function(card){
@@ -413,7 +448,7 @@ function arrangeCards()
         card.y = y;
         card.width = width;
         card.height = height;
-        if(cards.length > 7)
+        if(cardss.length > 7)
         {
             w+=winc;
         }
@@ -422,6 +457,8 @@ function arrangeCards()
             w+= card.width;
         }
     });
+    console.log("updated");
+    LastCardCount = cardss.length;
 };
 /**
      * 

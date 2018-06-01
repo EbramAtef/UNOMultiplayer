@@ -46,8 +46,7 @@ socket.on("Play",function()
 {
     CanPlay = true;
     console.log("playing");
-    $(".fullScreen").fadeIn();
-    window.setTimeout(removeFullScreen, 500);
+    message("Your Turn!");
 });
 socket.on("CardPlayed",function(data){
     console.log(data);
@@ -68,6 +67,16 @@ socket.on("CardDrawn",function(data){
 socket.on("CanDraw",function(){
     CanDraw = true;
 });
+socket.on("GameEnded",function(data){
+    message("PLayer "+data.WhoWon+" won the game with score "+data.score);
+    alert("PLayer "+data.WhoWon+" won the game with score "+data.score);
+});
+function message(msg)
+{
+    $(".fullScreen h1").html(msg);
+    $(".fullScreen").fadeIn();
+    window.setTimeout(removeFullScreen, 500);
+}
 function removeFullScreen()
 {
     $(".fullScreen").hide();

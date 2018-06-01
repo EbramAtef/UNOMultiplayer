@@ -43,7 +43,7 @@ module.exports = class Game {
                 {
                     card.value = 1;
                 }
-                if(card.filename.includes("+2") != -1)
+                if(card.filename.includes("+2"))
                 {
                     card.value = 2;
                 }
@@ -177,11 +177,19 @@ module.exports = class Game {
         this.players[this.whoPlayNow].socket.emit("CanDraw");
         this.direction = 1;
     }
-    endgame()
+    endgame(index)
     {
+        var score = 0;
+        //calculate the score
+        var won = this.players[index];
         this.players.forEach(player => {
-            player.socket.emit("disconnectedGm");
+            player.socket.emit("GameEnded",{
+                WhoWon : won.db.username,
+                score : score
+            });
+            player.playing = false;
         });
+        
     }
     recconected(access_token)
     {
@@ -211,7 +219,7 @@ module.exports = class Game {
             }
         }
     }
-    Played(cardRecieved,access_token,socket)
+    Played(cardRecieved,access_token,socket,UNO)
     {
         var pl = -1;
         //verfiy the user
@@ -260,6 +268,18 @@ module.exports = class Game {
                 card: cardRecieved,
             });
         });
+        if(this.players[this.whoPlayNow].cards.length === 2 && !UNO)
+        {
+            var c = this.DrawCard(2);
+            this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
+            this.players[this.whoPlayNow].socket.emit("DrawCards",{
+                cards : c
+            });
+        }
+        if(this.players[this.whoPlayNow].cards.length === 1)
+        {
+            this.endgame(this.whoPlayNow);
+        }
         //TODO: preform the action and move to the next player here
         if(cardRecieved.type == 2)
         {
@@ -319,6 +339,7 @@ module.exports = class Game {
                 {
                     this.whoPlayNow = 0;
                 }
+                console.log(cardRecieved.value);
                 switch (cardRecieved.value) {
                     case 0:
                         this.players[this.whoPlayNow].socket.emit("Skipped");
@@ -353,6 +374,7 @@ module.exports = class Game {
             }
             
         }
+        this.players[this.whoPlayNow].hasDrawnAcard = false;
         this.players[this.whoPlayNow].socket.emit("Play");
         this.players[this.whoPlayNow].socket.emit("CanDraw");
         //remove it form the player hand
@@ -442,9 +464,48 @@ module.exports = class Game {
                 this.players[i].cards.push(c);
                 this.players[i].socket.emit("CardDrawn",{
                     card: c,
-                })
+                });
+                this.players[i].hasDrawnAcard = true;
             }
         }
+    }
+    Pass(access_token)
+    {
+        var pl = -1;
+        //verfiy the user
+        for(var i = 0;i<this.players.length;i++)
+        {
+            if(this.players[i].access_token == access_token)
+                pl = i;
+        }
+        if(pl == -1)
+        {            
+            this.players[pl].socket.emit("DON'T TRY TO CHEAT!!");
+            return;
+        }
+        //verfiy that he is the one who have to play
+        if(this.whoPlayNow !== pl)
+        {
+            this.players[pl].socket.emit("DON'T TRY TO CHEAT!!");
+            return;
+        }
+        if(!this.players[pl].hasDrawnAcard)
+        {
+            this.players[pl].socket.emit("DON'T TRY TO CHEAT!!");
+            return;
+        }
+        this.whoPlayNow+=this.direction;
+        if(this.whoPlayNow == -1)
+        {
+            this.whoPlayNow = this.players.length -1;
+        }
+        else if(this.whoPlayNow == this.players.length)
+        {
+            this.whoPlayNow = 0;
+        }
+        this.players[this.whoPlayNow].socket.emit("Play");
+        this.players[this.whoPlayNow].socket.emit("CanDraw");
+        this.players[pl].hasDrawnAcard = false;
     }
     CanDraw(cards)
     {
