@@ -1,4 +1,4 @@
-//require('dotenv').config();
+require('dotenv').config();
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
 //import express.js 
@@ -22,11 +22,12 @@ var serv = require('http').Server(app); //Server-11
 
 //import postgres
 const { Client } = require('pg');
+const db = new Client();
+/*
 const db = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: true,
-});
-
+}); */
 //connect to database
 db.connect();
 
@@ -69,6 +70,11 @@ app.get('/dashboard/Organise',function(req,res)
     res.render(__dirname + '/client/Dashboard/org',{
         users : users
     });
+});
+app.get('/dashboard/AddUser',function(req,res)
+{
+    
+    res.render(__dirname + '/client/Dashboard/adduser');
 });
 /*app.post('/Dashboard/StartGame',function(req,res)
 {
@@ -214,6 +220,15 @@ io.sockets.on('connection', function(socket){
         });
 
     });
+    socket.on('disconnect', function() {
+        var i
+        for(i = 0;i<players.length;i++)
+        {
+            if(players[i].socket.id == socket.id)
+                break;
+        }
+    });
+
     socket.on("played",function(data){
         games.forEach(function(game){
             if(game.id == data.id)

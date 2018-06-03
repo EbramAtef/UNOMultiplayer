@@ -268,13 +268,29 @@ module.exports = class Game {
                 card: cardRecieved,
             });
         });
-        if(this.players[this.whoPlayNow].cards.length === 2 && !UNO)
+        if(this.players[this.whoPlayNow].cards.length === 2)
         {
-            var c = this.DrawCard(2);
-            this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
-            this.players[this.whoPlayNow].socket.emit("DrawCards",{
-                cards : c
-            });
+            if(!UNO)
+            {
+                var c = this.DrawCard(2);
+                this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
+                this.players[this.whoPlayNow].socket.emit("DrawCards",{
+                    cards : c
+                });
+            }
+            else
+            {
+                //UNOBroadCast
+                for(var i = 0;i<this.players.length;i++)
+                {
+                    if(i != this.whoPlayNow)
+                    {
+                        this.players[i].socket.emit("UNOBroadCast",{
+                            player : this.players[this.whoPlayNow].db.username
+                        })
+                    }
+                }
+            }
         }
         if(this.players[this.whoPlayNow].cards.length === 1)
         {
@@ -328,30 +344,24 @@ module.exports = class Game {
             }
             if(cardRecieved.type == 1)
             {
-                if(cardRecieved.val == 1)
-                    this.direction*=-1;
-                this.whoPlayNow+=this.direction;
-                if(this.whoPlayNow == -1)
+                if(cardRecieved.value == 1)
                 {
-                    this.whoPlayNow = this.players.length -1;
+                    if(this.players.length > 2)
+                    {
+                        this.direction*=-1;
+                    }
+                    else
+                    {
+                        this.advancePlayer();
+                    }
                 }
-                else if(this.whoPlayNow == this.players.length)
-                {
-                    this.whoPlayNow = 0;
-                }
+                this.advancePlayer();
                 console.log(cardRecieved.value);
+                console.log(this.direction);
                 switch (cardRecieved.value) {
                     case 0:
                         this.players[this.whoPlayNow].socket.emit("Skipped");
-                        this.whoPlayNow+=this.direction;
-                        if(this.whoPlayNow == -1)
-                        {
-                            this.whoPlayNow = this.players.length -1;
-                        }
-                        else if(this.whoPlayNow == this.players.length)
-                        {
-                            this.whoPlayNow = 0;
-                        }
+                        this.advancePlayer();
                         break;
                     case 2:
                         var c = this.DrawCard(2);
@@ -360,15 +370,7 @@ module.exports = class Game {
                             cards : c
                         });
                         this.players[this.whoPlayNow].socket.emit("Skipped");
-                        this.whoPlayNow+=this.direction;
-                        if(this.whoPlayNow == -1)
-                        {
-                            this.whoPlayNow = this.players.length -1;
-                        }
-                        else if(this.whoPlayNow == this.players.length)
-                        {
-                            this.whoPlayNow = 0;
-                        }
+                        this.advancePlayer();
                         break;
                 }
             }
@@ -379,6 +381,18 @@ module.exports = class Game {
         this.players[this.whoPlayNow].socket.emit("CanDraw");
         //remove it form the player hand
         this.players[pl].cards.splice(index,1);
+    }
+    advancePlayer()
+    {
+        this.whoPlayNow+=this.direction;
+        if(this.whoPlayNow == -1)
+        {
+            this.whoPlayNow = this.players.length -1;
+        }
+        else if(this.whoPlayNow == this.players.length)
+        {
+            this.whoPlayNow = 0;
+        }
     }
     /**
      * 

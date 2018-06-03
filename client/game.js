@@ -348,8 +348,8 @@ function DrawACard(e)
 }
 function cardClicked(e,game)
 {
-    console.log(e.data.filename);
-    e.y -= 20;
+    console.log(e.data);
+    
     if(e.data.type == 0)
     {
         var html = '<div class="message"><br><button style="background:#ff0000" class="button" id="0"></button><button style="background:#ffff00" class="button" id="1"></button><button style="background:#00ff00" class="button" id="2"></button><button style="background:#0000ff" class="button" id="3"></button></div>';

@@ -71,6 +71,10 @@ socket.on("GameEnded",function(data){
     message("PLayer "+data.WhoWon+" won the game with score "+data.score);
     alert("PLayer "+data.WhoWon+" won the game with score "+data.score);
 });
+socket.on("UNOBroadCast",function(data){
+    var msg = new SpeechSynthesisUtterance(data.player+ " Says Uno");
+    window.speechSynthesis.speak(msg);
+});
 function message(msg)
 {
     $(".fullScreen h1").html(msg);
