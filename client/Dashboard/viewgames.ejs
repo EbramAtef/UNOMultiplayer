@@ -98,9 +98,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
       <!-- Sidebar Menu -->
       <ul class="sidebar-menu" data-widget="tree">
         <!-- Optionally, you can add icons to the links -->
-        <li class="active"><a href="/dashboard"><i class="fa fa-users"></i> <span>Registered Users</span></a></li>
+        <li><a href="/dashboard"><i class="fa fa-users"></i> <span>Registered Users</span></a></li>
         <li><a href="/dashboard/Organise"><i class="fa fa-link"></i> <span>Organise a Game</span></a></li>
-        <li><a href="/dashboard/Viewgames"><i class="fa fa-link"></i> <span>Manage Running Games</span></a></li>
+        <li class="active"><a href="/dashboard/Viewgames"><i class="fa fa-link"></i> <span>Manage Running Games</span></a></li>
       </ul>
       <!-- /.sidebar-menu -->
     </section>
@@ -111,9 +111,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header clearfix">
-      <span class="pull-right"><a href="/dashboard/AddUser" class="btn btn-block btn-primary">Add New Users</a></span>
+      <span class="pull-right"><a href="/dashboard/Organise" class="btn btn-block btn-primary">Start New Game</a></span>
       <h1>
-        Registered users
+        Running Games
       </h1>
       
     </section>
@@ -126,16 +126,22 @@ scratch. This page gets rid of all links and provides the needed markup only.
         <div class="box-body no-padding">
           <table class="table table-striped">
             <tr>
-              <th style="width: 10px">#</th>
-              <th>Name</th>
-              <th style="width: 40px">score</th>
+              <th style="width: 50px">#</th>
+              <th>players</th>
+              <th style="width: 100px">options</th>
             </tr>
-            <% users.forEach(function(user) { %>
+            <% games.forEach(function(game) { %>
                 <tr>
-                    <td><%= user.id %></td>
-                    <td><%= user.username %></td>
-                    <td><span>0</span></td>
-                  </tr>
+                  <td><%= game.id %></td>
+                  <td> 
+                    <% game.players.forEach(function(pl) { %>
+                      <%= pl %> <br>
+                    <% }); %>
+                  </td>
+                  <td>
+                    <a href="/dashboard/endGame?id=<%= game.id %>" class="btn btn-block btn-primary">End Game</a>
+                  </td>
+                </tr>
             <% }); %>
           </table>
         </div>

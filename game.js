@@ -18,7 +18,7 @@ function copy(o) {
     return output;
 }  
 module.exports = class Game {
-    constructor(players,cards){
+    constructor(players,cards,eventEmitter){
         this.players = players;
         this.players_minfied = [];
         this.cards = copy(cards);
@@ -111,6 +111,7 @@ module.exports = class Game {
         this.id = Math.floor(new Date() / 1000);
         this.discardDeck = [];
         console.log("Game Object has been created ID="+this.id);
+        this.eventEmitter = eventEmitter;
     }
     middleCard()
     {
@@ -179,17 +180,28 @@ module.exports = class Game {
     }
     endgame(index)
     {
-        var score = 0;
-        //calculate the score
-        var won = this.players[index];
-        this.players.forEach(player => {
-            player.socket.emit("GameEnded",{
-                WhoWon : won.db.username,
-                score : score
+        console.log(this.id);
+        if(index == -1)
+        {
+            this.players.forEach(player => {
+                player.socket.emit("ServerEndedGame");
+                player.playing = false;
             });
-            player.playing = false;
-        });
-        
+        }
+        else
+        {
+            var score = 0;
+            //calculate the score
+            var won = this.players[index];
+            this.players.forEach(player => {
+                player.socket.emit("GameEnded",{
+                    WhoWon : won.db.username,
+                    score : score
+                });
+                player.playing = false;
+            });
+        }
+        this.eventEmitter.emit('gameEnds',this.id);
     }
     recconected(access_token)
     {

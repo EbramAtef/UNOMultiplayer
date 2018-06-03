@@ -72,10 +72,43 @@ app.get('/dashboard/Organise',function(req,res)
     });
 });
 app.get('/dashboard/AddUser',function(req,res)
-{
-    
+{ 
     res.render(__dirname + '/client/Dashboard/adduser');
 });
+app.post('/dashboard/AddUser',function(req,response)
+{
+    console.log(req.body.username);
+    console.log(req.body.password);
+    const text = 'INSERT INTO users(username, pass) VALUES($1, $2)';
+    const values = [req.body.username, req.body.password];
+    // callback
+    db.query(text, values, (err, res) => {
+    if (err) {
+        console.log(err.stack)
+    } else {
+        response.send({val: 1});
+    }
+    });
+});
+app.post('/dashboard/checkUsername',function(request,response)
+{
+    console.log(request.body.username);
+    text = 'Select * from users where username = $1';
+    values = [request.body.username];
+    db.query(text, values, (err, res) => {
+        if (err) {
+        console.log(err.stack)
+        } else if(res.rows[0]){
+            response.send({val: 1});
+            console.log("matches");
+        }
+        else
+        {
+            response.send({val: -1});
+        }
+    });
+});
+
 /*app.post('/Dashboard/StartGame',function(req,res)
 {
     var game_players = [];
@@ -116,9 +149,38 @@ app.post('/Dashboard/StartGame',function(req,res)
     if(game_players.length < 1 || flag)
         return;
     console.log(cards.length);
-    var game = new Game(game_players,cards);
+    var game = new Game(game_players,cards,eventEmitter);
     game.start();
     games.push(game);
+});
+app.get('/Dashboard/Viewgames',function(req,res)
+{
+    var games_min = [];
+    games.forEach(function(game){
+        var temp={};
+        temp.id = game.id;
+        temp.players = [];
+        game.players.forEach(function(pl){
+            temp.players.push(pl.db.username);
+        });
+        games_min.push(temp);
+    });
+    res.render(__dirname + '/client/Dashboard/viewgames',{
+        games : games_min
+    });
+});
+app.get('/Dashboard/endGame',function(req,res){
+    var id = parseInt(req.query.id);
+    console.log(id);
+    for(var i = 0;i<games.length;i++)
+    {
+        if(games[i].id == id)
+        {
+            games[i].endgame(-1);
+            break;
+        }
+    }
+    return res.redirect('/Dashboard/Viewgames');
 });
 //this means when a get request is made to ‘/client’, put all the 
 //static files inside the client folder 
@@ -127,6 +189,7 @@ app.use('/client',express.static(__dirname + '/client'));
 app.use('/scripts/input',express.static(__dirname + '/node_modules/@orange-games/phaser-input/build/'));
 function GameEnds(gameid)
 {
+    console.log(gameid);
     for(var i = 0;i<games.length;i++)
     {
         if(games[i].id === gameid)
@@ -136,6 +199,7 @@ function GameEnds(gameid)
         }
     }
 }
+eventEmitter.on('gameEnds', GameEnds);
 function Player(socket)
 {
     this.socket = socket;
@@ -204,6 +268,7 @@ io.sockets.on('connection', function(socket){
             if(players[i].access_token == data.access_token)
             {
                 players[i].socket = socket;
+                clearTimeout(players[i].disconnect);
             }
             socket.emit("logged", {
                 access_token : data.access_token
@@ -218,14 +283,29 @@ io.sockets.on('connection', function(socket){
                 }
             });        
         });
-
+        
     });
     socket.on('disconnect', function() {
-        var i
+        var i = -1;
         for(i = 0;i<players.length;i++)
         {
             if(players[i].socket.id == socket.id)
                 break;
+        }
+        if(i != players.length)
+        {
+            players[i].disconnect = setTimeout(function(){
+            console.log(players[i].disconnected);
+                games.forEach(function(game){
+                    game.players.forEach(pl => {
+                        if(pl.access_token == players[i].access_token)
+                        {
+                            game.endgame(-1);
+                        }
+                    });
+                });
+                players.splice(i,1);
+            }, 10000);
         }
     });
 
@@ -254,3 +334,7 @@ io.sockets.on('connection', function(socket){
         })
     });
 });
+function deleteplayer()
+{
+
+}
