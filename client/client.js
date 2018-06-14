@@ -55,6 +55,7 @@ socket.on("CardPlayed",function(data){
     middlecard = data.card;
     middlecardchanged = true;
     playerWhoPlayed = data.player.username;
+    ChangeTheNumberOfCards(data.player.username,-1);
 });
 socket.on("DrawCards",function(data){
     console.log("DrawCards");
@@ -74,6 +75,7 @@ socket.on("PlayerDrawedACard",function(data){
     console.log(data);
     PlayerDrawedACardAnimationData = data;
     PlayerDrawedACardAnimation = true;
+    ChangeTheNumberOfCards(PlayerDrawedACardAnimationData.player,PlayerDrawedACardAnimationData.cardNum);
 });
 socket.on("GameEnded",function(data){
     message("PLayer "+data.WhoWon+" won the game with score "+data.score);

@@ -20,7 +20,6 @@ function copy(o) {
 module.exports = class Game {
     constructor(players,cards,eventEmitter){
         this.players = players;
-        this.players_minfied = [];
         this.cards = copy(cards);
         this.cards.forEach(function(card){
             if(card.filename.charAt(0) == 'W')
@@ -182,7 +181,6 @@ module.exports = class Game {
                 order : player.order
             });
         });
-        this.players_minfied = players_minfied;
         this.whoPlayNow = 0;
         this.players[this.whoPlayNow].socket.emit("Play");
         this.players[this.whoPlayNow].socket.emit("CanDraw");
@@ -216,7 +214,15 @@ module.exports = class Game {
     recconected(access_token)
     {
         console.log("Reconnect Attempt ID="+this.id);
-        var pl = this.players_minfied;
+        var pl =[];
+        this.players.forEach(function(player){
+            var temp = {
+                username : player.db.username,
+                cards : player.cards.length,
+                order : player.order
+            };
+            pl.push(temp);
+        });
         var mid =  this.middleCard();
         var idga =  this.id;
         for(var i =0;i<this.players.length;i++)

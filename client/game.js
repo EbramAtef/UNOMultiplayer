@@ -653,6 +653,17 @@ function copy(o) {
     }
     return output;
 }  
+function ChangeTheNumberOfCards(username,n)
+{
+    pl.forEach(function(player){
+        if(player.username == username)
+        {
+            player.cardsnum += n;
+            player.cardsnumsprite.setText(player.cardsnum);
+        }
+    });
+}
+
 /**
      * 
      * Cards Values Dic
