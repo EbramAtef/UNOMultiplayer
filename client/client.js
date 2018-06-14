@@ -31,6 +31,7 @@ socket.on("Started", function(data)
     middlecard = data.middleCard;
     players = data.players;
     GameId = data.id;
+    order = data.order;
     game.state.start("Game");
 });
 socket.on("reconnected", function(data)
@@ -40,6 +41,7 @@ socket.on("reconnected", function(data)
     middlecard = data.middleCard;
     players = data.players;
     GameId = data.id;
+    order = data.order;
     game.state.start("Game");
 });
 socket.on("Play",function()
@@ -52,6 +54,7 @@ socket.on("CardPlayed",function(data){
     console.log(data);
     middlecard = data.card;
     middlecardchanged = true;
+    playerWhoPlayed = data.player.username;
 });
 socket.on("DrawCards",function(data){
     console.log("DrawCards");
@@ -66,6 +69,11 @@ socket.on("CardDrawn",function(data){
 });
 socket.on("CanDraw",function(){
     CanDraw = true;
+});
+socket.on("PlayerDrawedACard",function(data){
+    console.log(data);
+    PlayerDrawedACardAnimationData = data;
+    PlayerDrawedACardAnimation = true;
 });
 socket.on("GameEnded",function(data){
     message("PLayer "+data.WhoWon+" won the game with score "+data.score);

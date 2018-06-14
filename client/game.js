@@ -1,8 +1,9 @@
 var cardss = [];
-var pl;
+var pl = [];
 var deck;
 var UNOFlag = false;
 var LastCardCount = 0;
+var midcard;
 Gameobject.Boot = function(game){};
 Gameobject.Boot.prototype = {
     preload:function()
@@ -130,29 +131,33 @@ Gameobject.Game.prototype = {
     },
     create:function()
     {
+        this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+        this.scale.pageAlignHorizontally = true;
+        this.scale.pageAlignVertically = true;
         game.time.advancedTiming = true;
         var background = game.add.sprite(0, 0, 'background');
         background.x = 0;
         background.y = 0;
         background.height = game.height;
         background.width = game.width;
+        cardss = [];
         cards.forEach(function(car){
             var card = game.add.sprite(0, 0, 'cards', car.filename);
-            card.events.onInputDown.add(cardClicked, this, game);
+            card.events.onInputDown.add(cardClicked, this);
             card.data = car;
             cardss.push(card);
         });
-        var midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
-        midcard.width = canvas_width/9;
+        midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
+        midcard.width = canvas_width/10;
         var ratio = 240/360;
         midcard.height = midcard.width/ratio;
         midcard.x -= midcard.width + 10;
-        midcard.y -= midcard.height/2;
+        midcard.y -= midcard.height/2 - 20;
 
         deck = game.add.sprite(game.world.centerX,game.world.centerY,'back');
         deck.width = midcard.width;
         deck.height = midcard.height;
-        deck.y -= deck.height/2;
+        deck.y -= deck.height/2 - 20;
         deck.x +=10
         deck.events.onInputDown.add(DrawACard, this);
         //deck.inputEnabled = true;
@@ -175,68 +180,165 @@ Gameobject.Game.prototype = {
                     break;
             }
         }
-        pl = game.add.group();
-
         switch (players.length) {
             case 1:
+                pl[0] = {};
+                pl[0].username = players[0].username;
                 var x = game.world.centerX;
                 var y = 0
                 var img0 = game.add.sprite(x,y,'avatar');
-                img0.width/=1.4;
-                img0.height/=1.4;
+                img0.width=canvas_width/8;
+                img0.height=canvas_width/8;
                 img0.x -= img0.width/2;
-                y += img0.height+20;
-                var text0 = game.add.text(x, y, players[0], style);
+                y += img0.height;
+                pl[0].x = img0.x+img0.width/2;
+                pl[0].y = img0.y+img0.height/2;
+                var style = { font: "5vh Arial", fill: "#fff", align: "center" };
+                var text0 = game.add.text(x, y, players[0].username, style);
                 text0.x -= text0.width/2;
+                var text1 = game.add.text(x, y, players[0].cards, style);
+                text1.x -= text1.width/2 - (text0.width/2 + 10);
+                pl[0].cardsnumsprite = text1;
+                pl[0].cardsnum = players[0].cards;
                 break;
             case 2:
-                var x = 0;
-                var y = 0;
-                var img = game.add.sprite(x,y,'avatar');
-                y += img.height+20;
-                var style = { font: "32px Arial", fill: "#fff", align: "center" };
-                var text = game.add.text(x+(img.width/2), y, players[0], style);
-                text.x -= text.width/   2;
+                var ord = order+1; /////// really i need to think of better names for the vars 
+                if(ord === players.length+1)
+                {
+                    ord = 0;
+                } 
+                var player = players.filter(function( obj ) {
+                    return obj.order ==ord;
+                })[0];
+                pl[1] = {};
+                pl[1].username = player.username;
                 x = game.width - 256;
                 y = 0;
                 var img2 = game.add.sprite(x,y,'avatar');
-                y += img2.height+20;
-                var style2 = { font: "32px Arial", fill: "#fff", align: "center" };
-                var text2 = game.add.text(x+img2.width/2, y, players[1], style);
+                img2.width=canvas_width/8;
+                img2.height=canvas_width/8;
+                y += img2.height+10;
+                pl[1].x = img2.x+img2.width/2;
+                pl[1].y = img2.y+img2.height/2;
+                var style2 = { font: "5vh Arial", fill: "#fff", align: "center" };
+                var text2 = game.add.text(x+img2.width/2, y, player.username, style2);
                 text2.x -= text2.width/2;
+                var text3 = game.add.text(x+img2.width/2, y, player.cards, style2);
+                text3.x -= text3.width/2 - (text2.width/2 + 10);
+                pl[1].cardsnumsprite = text3;
+                pl[1].cardsnum = player.cards;
+                ////////////////////////////////
+                ord++;
+                if(ord === players.length+1)
+                {
+                    ord = 0;
+                } 
+                var player = players.filter(function( obj ) {
+                    return obj.order ==ord;
+                })[0]; 
+                pl[0] = {};
+                pl[0].username = player.username;
+                var x = 0;
+                var y = 0;
+                var img = game.add.sprite(x,y,'avatar');
+                img.width=canvas_width/8;
+                img.height=canvas_width/8;
+                y += img.height+10;
+                pl[0].x = img.x+img.width/2;
+                pl[0].y = img.y+img.height/2;
+                var style = { font: "5vh Arial", fill: "#fff", align: "center" };
+                var text = game.add.text(x+(img.width/2), y, player.username, style);
+                text.x -= text.width/2;
+                var text1 = game.add.text(x+(img.width/2), y, player.cards, style);
+                text1.x -= text1.width/2 - (text.width/2 + 10);
+                pl[0].cardsnumsprite = text1;
+                pl[0].cardsnum = player.cards; 
                 break;
             case 3:
-                var x = game.world.centerX;
-                var y = 0
+                var ord = order+1; /////// really i need to think of better names for the vars 
+                if(ord === players.length+1)
+                {
+                    ord = 0;
+                } 
+                var player = players.filter(function( obj ) {
+                    return obj.order ==ord;
+                })[0];
+                pl[0] = {};
+                pl[0].username = player.username;
+                var x = game.width - 256;
+                var y = 20;
+                var img2 = game.add.sprite(x,y,'avatar');
+                img2.width=canvas_width/8;
+                img2.height=canvas_width/8;
+                y += img2.height+20;
+                pl[0].x = img2.x+img2.width/2;
+                pl[0].y = img2.y+img2.height/2;
+                var style = { font: "4vh Arial", fill: "#fff", align: "center" };
+                var text2 = game.add.text(x+img2.width/2, y, player.username, style);
+                text2.x -= text2.width/2;
+                var text1 = game.add.text(x+img2.width/2, y, player.cards, style);
+                text1.x -= text1.width/2 - (text2.width/2 + 10);
+                pl[0].cardsnumsprite = text1;
+                pl[0].cardsnum = player.cards;
+                /////////////////////////////////
+                ord++;
+                if(ord === players.length+1)
+                {
+                    ord = 0;
+                } 
+                var player = players.filter(function( obj ) {
+                    return obj.order ==ord;
+                })[0];
+                pl[1] = {};
+                pl[1].username = player.username;
+                x = game.world.centerX;
+                y = 0
                 var img0 = game.add.sprite(x,y,'avatar');
-                img0.width/=1.4;
-                img0.height/=1.4;
+                img0.width=canvas_width/8;
+                img0.height=canvas_width/8;
                 img0.x -= img0.width/2;
                 y += img0.height+20;
-                var text0 = game.add.text(x, y, players[0], style);
+                pl[1].x = img0.x+img0.width/2;
+                pl[1].y = img0.y+img0.height/2;
+                var text0 = game.add.text(x, y, player.username, style);
                 text0.x -= text0.width/2;
+                var text3 = game.add.text(x, y, player.cards, style);
+                text3.x -= text3.width/2 - (text0.width/2 + 10);
+                pl[1].cardsnumsprite = text3;
+                pl[1].cardsnum = player.cards;
+                ///////////////////////////////////////////////////////////
+                ord++;
+                if(ord === players.length+1)
+                {
+                    ord = 0;
+                } 
+                var player = players.filter(function( obj ) {
+                    return obj.order ==ord;
+                })[0];
+                pl[2] = {};
+                pl[2].username = player.username;
                 x = 0;
                 y = 20;
                 var img = game.add.sprite(x,y,'avatar');
+                img.width=canvas_width/8;
+                img.height=canvas_width/8;
                 y += img.height+20;
-                var style = { font: "32px Arial", fill: "#fff", align: "center" };
-                var text = game.add.text(x+(img.width/2), y, players[1], style);
-                text.x -= text.width/   2;
-                x = game.width - 256;
-                y = 20;
-                var img2 = game.add.sprite(x,y,'avatar');
-                y += img2.height+20;
-                var style2 = { font: "32px Arial", fill: "#fff", align: "center" };
-                var text2 = game.add.text(x+img2.width/2, y, players[2], style);
-                text2.x -= text2.width/2;
-
+                pl[2].x = img.x+img.width/2;
+                pl[2].y = img.y+img.height/2;
+                var text = game.add.text(x, y, player.username, style);
+                //text.x -= text.width/2;
+                var text4 = game.add.text(x, y, player.cards, style);
+                text4.x+= (text.width + 10);
+                pl[2].cardsnumsprite = text4;
+                pl[2].cardsnum = player.cards;
                 break;
             default:
                 break;
         }
-        console.log(pl);
         //UNO Button
         this.UNO = game.add.sprite(game.width,game.height,"unobutton");
+        this.UNO.width = canvas_width /10;
+        this.UNO.height = canvas_width /10;
         this.UNO.x -= this.UNO.width + 50 ;
         this.UNO.y -= this.UNO.height +50 ;
         this.UNO.events.onInputDown.add(SetUnoFlag, this);
@@ -244,7 +346,7 @@ Gameobject.Game.prototype = {
         //Pass Button
         this.Pass = game.add.sprite(0,game.height,"passbutton");
         this.Pass.x += 50 ;
-        this.Pass.y -= this.Pass.height + 50 ;
+        this.Pass.y = this.UNO.y;
         this.Pass.width = this.UNO.width;
         this.Pass.height = this.UNO.height;
         this.Pass.events.onInputDown.add(Passfunc, this);
@@ -265,42 +367,21 @@ Gameobject.Game.prototype = {
             cardss.forEach(function(car){
                 car.inputEnabled = false;
             });
-        if(middlecardchanged)
-        {
-            var midcard = game.add.sprite(game.world.centerX,game.world.centerY,'cards',middlecard.filename);
-            midcard.width = canvas_width/9;
-            var ratio = 240/360;
-            midcard.height = midcard.width/ratio;
-            midcard.x -= midcard.width + 10;
-            midcard.y -= midcard.height/2;
-            if(middlecard.type == 0)
-            {
-                switch (middlecard.color) {
-                    case 0:
-                        midcard.tint = 0xff0000;
-                        break;                    
-                    case 1:
-                        midcard.tint = 0xffff00;
-                        break;                    
-                    case 2:
-                        midcard.tint = 0x00ff00;
-                        break;                    
-                    case 3:
-                        midcard.tint = 0x0000ff;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            middlecardchanged = false;
-        }
         if(IsnewCards)
         {
+            var i = 0;
             newCards.forEach(function(car){
-                var card = game.add.sprite(0, 0, 'cards', car.filename);
-                card.events.onInputDown.add(cardClicked, this,game);
+                var card = game.add.sprite(deck.x, deck.y, 'cards', car.filename);
+                card.height = deck.height;
+                card.width= deck.width;
+                card.events.onInputDown.add(cardClicked, this);
                 card.data = car;
-                cardss.push(card);
+                var tween=game.add.tween(card);
+                tween.to({ x: game.world.centerX, y:game.height, width:0, height:0 }, 1000,"Sine.easeInOut",false,i*500);
+                tween.interpolation(Phaser.Math.linearInterpolation);
+                tween.onComplete.add(DrawnACardTwennCallback,this,tween);
+                tween.start();
+                i++;
             });
             IsnewCards = false;
         }
@@ -312,11 +393,80 @@ Gameobject.Game.prototype = {
         {
             this.UNO.loadTexture("unobuttonPressed");
         }
+        if(middlecardchanged)
+        {
+            middlecardchanged = false;
+            var player = pl.filter(function( obj ) {
+                return obj.username == playerWhoPlayed;
+            })[0];
+            console.log(pl);
+            var card = game.add.sprite(player.x,player.y,'cards',middlecard.filename);
+            card.width = 0;
+            card.height = 0;
+            game.world.bringToTop(card);
+            var tween=game.add.tween(card);
+            tween.to({ x: midcard.x, y:midcard.y, width:midcard.width, height:midcard.height }, 1000,"Sine.easeInOut");
+            tween.interpolation(Phaser.Math.linearInterpolation);
+            tween.onComplete.add(PlayerPlayedMiddleCardTwennCallback,this,tween);
+            tween.start();
+        }
+        if(PlayerDrawedACardAnimation)
+        {
+            PlayerDrawedACardAnimation = false;
+            var player = pl.filter(function( obj ) {
+                return obj.username == PlayerDrawedACardAnimationData.player;
+            })[0];
+            for(var i = 0;i<PlayerDrawedACardAnimationData.cardNum;i++)
+            {
+                var card = game.add.sprite(deck.x,deck.y,'back');
+                card.height = deck.height;
+                card.width = deck.width;
+                var tween=game.add.tween(card);
+                tween.to({ x: player.x, y:player.y, width:0, height:0 }, 1000,"Sine.easeInOut",false,i*500);
+                tween.interpolation(Phaser.Math.linearInterpolation);
+                tween.onComplete.add(PlayerDrawnACardTwennCallback,this,tween);
+                tween.start();
+            }
+        }
     },
     render : function()
     {
         game.debug.text(game.time.fps, 2, 14, "#00ff00");
     }
+}
+function DrawnACardTwennCallback(card,tween)
+{
+    cardss.push(card);
+}
+function PlayerDrawnACardTwennCallback(card,tween)
+{
+    card.destroy();
+}
+function PlayerPlayedMiddleCardTwennCallback(card,tween)
+{
+    console.log(card)
+    midcard.loadTexture('cards',middlecard.filename);
+    console.log(middlecard);
+    if(middlecard.type == 0)
+    {
+        switch (middlecard.color) {
+            case 0:
+                midcard.tint = 0xff0000;
+                break;                    
+            case 1:
+                midcard.tint = 0xffff00;
+                break;                    
+            case 2:
+                midcard.tint = 0x00ff00;
+                break;                    
+            case 3:
+                midcard.tint = 0x0000ff;
+                break;
+            default:
+                break;
+        }
+    }
+    card.destroy();
 }
 function SetUnoFlag(e)
 {
@@ -346,7 +496,7 @@ function DrawACard(e)
         access_token : access_token
     });
 }
-function cardClicked(e,game)
+function cardClicked(e)
 {
     console.log(e.data);
     
@@ -372,11 +522,15 @@ function cardClicked(e,game)
                 if(e.data.filename == cardss[i].data.filename)
                     break;
             }
-            console.log(i);
-            cardss[i].destroy();
-            cardss.splice(i,1);
+            game.world.bringToTop(cardss[i]);
+            var tween=game.add.tween(cardss[i]);
+            tween.to({ x: midcard.x, y:midcard.y, width:midcard.width, height:midcard.height }, 1000,"Sine.easeInOut");
+            tween.interpolation(Phaser.Math.linearInterpolation);
+            tween.onComplete.add(ChangeMiddleCard,this,tween,i);
+            tween.start();
             CanPlay = false;
             UNOFlag = false;
+            CanDraw = false;
         });
     }
     else
@@ -393,15 +547,45 @@ function cardClicked(e,game)
             if(e.data.filename == cardss[i].data.filename)
                 break;
         }
-        console.log(i);
-        cardss[i].destroy();
-        cardss.splice(i,1);
+        game.world.bringToTop(cardss[i]);
+        var tween=game.add.tween(cardss[i]);
+        tween.to({ x: midcard.x, y:midcard.y, width:midcard.width, height:midcard.height }, 1000,"Sine.easeInOut");
+        tween.interpolation(Phaser.Math.linearInterpolation);
+        tween.onComplete.add(ChangeMiddleCard,this,tween,i);
+        tween.start();
         CanPlay = false;
         UNOFlag = false;
+        CanDraw = false;
     }
-    CanDraw = false;
 }
-
+function ChangeMiddleCard(card,tween,i)
+{
+    console.log(i);
+    console.log(cardss[i].data.filename);
+    midcard.loadTexture('cards',cardss[i].data.filename);
+    console.log(middlecard);
+    if(middlecard.type == 0)
+    {
+        switch (middlecard.color) {
+            case 0:
+                midcard.tint = 0xff0000;
+                break;                    
+            case 1:
+                midcard.tint = 0xffff00;
+                break;                    
+            case 2:
+                midcard.tint = 0x00ff00;
+                break;                    
+            case 3:
+                midcard.tint = 0x0000ff;
+                break;
+            default:
+                break;
+        }
+    }
+    cardss[i].destroy();
+    cardss.splice(i,1);
+}
 function CardCanBePlayed(playerCard)
 {
     if(playerCard.type === 0)
@@ -460,6 +644,15 @@ function arrangeCards()
     console.log("updated");
     LastCardCount = cardss.length;
 };
+function copy(o) {
+    var output, v, key;
+    output = Array.isArray(o) ? [] : {};
+    for (key in o) {
+        v = o[key];
+        output[key] = (typeof v === "object" && v !== null) ? copy(v) : v;
+    }
+    return output;
+}  
 /**
      * 
      * Cards Values Dic

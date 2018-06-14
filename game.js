@@ -142,6 +142,7 @@ module.exports = class Game {
         var players_minfied = [];
         this.cards = this.shuffle(this.cards);
         console.log(this.cards.length);
+        var index = 0;
         this.players.forEach(player => {
             var pl_cards = []
             for(var i = 0;i<7;i++)
@@ -151,7 +152,15 @@ module.exports = class Game {
             }
             console.log(this.cards.length);
             player.cards = pl_cards;
-            players_minfied.push(player.db.username);
+            player.order = index;
+            console.log(player.db.username + " " + player.order)
+            var temp = {
+                username : player.db.username,
+                cards : player.cards.length,
+                order : player.order
+            };
+            index++;
+            players_minfied.push(temp);
         });
         while(is_action_card(this.cards[0].filename))
         {
@@ -163,13 +172,14 @@ module.exports = class Game {
         this.cards.shift();
         this.players.forEach(player => {
             var temp = players_minfied.filter(function(pl) {
-                return pl != player.db.username;
+                return pl.username != player.db.username;
             });
             player.socket.emit("Started",{
                 cards: player.cards,
                 players:temp,
                 middleCard : this.middleCard(),
-                id :this.id
+                id :this.id,
+                order : player.order
             });
         });
         this.players_minfied = players_minfied;
@@ -215,13 +225,14 @@ module.exports = class Game {
             {
                 var self = this;
                 pl = pl.filter(function(temp){
-                    return temp != self.players[i].db.username;
+                    return temp.username != self.players[i].db.username;
                 });
                 this.players[i].socket.emit("reconnected",{
                     cards: this.players[i].cards,
                     players:pl,
                     middleCard :mid,
-                    id:idga
+                    id:idga,
+                    order:this.players[i].order
                 }); 
                 if(this.whoPlayNow == i)
                 {
@@ -275,11 +286,21 @@ module.exports = class Game {
         //change the middle card
         this.discardDeck.unshift(cardRecieved);
         //emit it 
-        this.players.forEach(player => {
+        /*this.players.forEach(player => {
             player.socket.emit("CardPlayed",{
                 card: cardRecieved,
             });
-        });
+        });*/
+        for(var i = 0;i<this.players.length;i++)
+        {
+            if(i != pl)
+            {            
+                this.players[i].socket.emit("CardPlayed",{
+                    card: cardRecieved,
+                    player: {username: this.players[pl].db.username,cards:this.players[pl].length}
+                });
+            }
+        }
         if(this.players[this.whoPlayNow].cards.length === 2)
         {
             if(!UNO)
@@ -287,7 +308,17 @@ module.exports = class Game {
                 var c = this.DrawCard(2);
                 this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
                 this.players[this.whoPlayNow].socket.emit("DrawCards",{
-                    cards : c
+                    cards : c,
+                });
+                var username = this.players[this.whoPlayNow].db.username
+                this.players.forEach(function(pl){
+                    if(pl.db.username != username)
+                    {
+                        pl.socket.emit("PlayerDrawedACard",{
+                            player : username,
+                            cardNum : 2
+                        });
+                    }
                 });
             }
             else
@@ -308,51 +339,36 @@ module.exports = class Game {
         {
             this.endgame(this.whoPlayNow);
         }
-        //TODO: preform the action and move to the next player here
         if(cardRecieved.type == 2)
         {
-            this.whoPlayNow+=this.direction;
-            if(this.whoPlayNow == -1)
-            {
-                this.whoPlayNow = this.players.length -1;
-            }
-            else if(this.whoPlayNow == this.players.length)
-            {
-                this.whoPlayNow = 0;
-            }
+            this.advancePlayer();
         }
         else
         {
             console.log("TODO Action card");
             if(cardRecieved.type == 0 && cardRecieved.value == 1)
             {
-                this.whoPlayNow+=this.direction;
-                if(this.whoPlayNow == -1)
-                {
-                    this.whoPlayNow = this.players.length -1;
-                }
-                else if(this.whoPlayNow == this.players.length)
-                {
-                    this.whoPlayNow = 0;
-                }
+                this.advancePlayer();
                 console.log(this.players[this.whoPlayNow].db.username);
                 var c = this.DrawCard(4);
                 this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
                 this.players[this.whoPlayNow].socket.emit("DrawCards",{
                     cards : c
                 });
+                var username = this.players[this.whoPlayNow].db.username;
+                this.players.forEach(function(pl){
+                    if(pl.db.username != username)
+                    {
+                        pl.socket.emit("PlayerDrawedACard",{
+                            player : username,
+                            cardNum : 4
+                        });
+                    }
+                });
             }
             else if(cardRecieved.type == 0 && cardRecieved.value == 0)
             {
-                this.whoPlayNow+=this.direction;
-                if(this.whoPlayNow == -1)
-                {
-                    this.whoPlayNow = this.players.length -1;
-                }
-                else if(this.whoPlayNow == this.players.length)
-                {
-                    this.whoPlayNow = 0;
-                }
+                this.advancePlayer();
             }
             if(cardRecieved.type == 1)
             {
@@ -380,6 +396,16 @@ module.exports = class Game {
                         this.players[this.whoPlayNow].cards.push.apply(this.players[this.whoPlayNow].cards,c);
                         this.players[this.whoPlayNow].socket.emit("DrawCards",{
                             cards : c
+                        });
+                        var username = this.players[this.whoPlayNow].db.username;
+                        this.players.forEach(function(pl){
+                            if(pl.db.username != username)
+                            {
+                                pl.socket.emit("PlayerDrawedACard",{
+                                    player : username,
+                                    cardNum : 2
+                                });
+                            }
                         });
                         this.players[this.whoPlayNow].socket.emit("Skipped");
                         this.advancePlayer();
@@ -490,6 +516,16 @@ module.exports = class Game {
                 this.players[i].cards.push(c);
                 this.players[i].socket.emit("CardDrawn",{
                     card: c,
+                });
+                var username = this.players[i].db.username
+                this.players.forEach(function(pl){
+                    if(pl.db.username != username)
+                    {
+                        pl.socket.emit("PlayerDrawedACard",{
+                            player : username,
+                            cardNum : 1
+                        });
+                    }
                 });
                 this.players[i].hasDrawnAcard = true;
             }

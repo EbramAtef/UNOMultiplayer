@@ -242,18 +242,29 @@ io.sockets.on('connection', function(socket){
                 console.log(data.password);
                 if(res.rows[0].pass === data.password)
                 {
-                    console.log("logged");
-                    require('crypto').randomBytes(48, function(err, buffer) {
-                        var token = buffer.toString('hex');
-                        socket.emit("logged", {
-                            access_token : token
+                    var index = -1;
+                    for(var i = 0;i<players.length;i++)
+                    {
+                        if(players[i].db.username == data.username)
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+                    if(index == -1)
+                    {
+                        console.log("logged");
+                        require('crypto').randomBytes(48, function(err, buffer) {
+                            var token = buffer.toString('hex');
+                            socket.emit("logged", {
+                                access_token : token
+                            });
+                            conn.setaccess(token);
+                            conn.setname(data.username);
+                            conn.setdb(res.rows[0]);
+                            players.push(conn);
                         });
-                        conn.setaccess(token);
-                        conn.setname(data.username);
-                        conn.setdb(res.rows[0]);
-                        players.push(conn);
-                    });
-
+                    }
                 }else
                 {
                     socket.emit("failed","Worng Credentials");
@@ -268,11 +279,12 @@ io.sockets.on('connection', function(socket){
             if(players[i].access_token == data.access_token)
             {
                 players[i].socket = socket;
-                clearTimeout(players[i].disconnect);
+                players[i].disconnected = false;
+                socket.emit("logged", {
+                    access_token : data.access_token
+                });
+                break;
             }
-            socket.emit("logged", {
-                access_token : data.access_token
-            });
         }
         games.forEach(function(game) {
             game.players.forEach(function(player){
@@ -283,28 +295,29 @@ io.sockets.on('connection', function(socket){
                 }
             });        
         });
-        
     });
     socket.on('disconnect', function() {
-        var i = -1;
-        for(i = 0;i<players.length;i++)
+        for(var i = 0;i<players.length;i++)
         {
             if(players[i].socket.id == socket.id)
                 break;
         }
         if(i != players.length)
         {
+            players[i].disconnected = true;
             players[i].disconnect = setTimeout(function(){
-            console.log(players[i].disconnected);
-                games.forEach(function(game){
-                    game.players.forEach(pl => {
-                        if(pl.access_token == players[i].access_token)
-                        {
-                            game.endgame(-1);
-                        }
+                console.log(i);
+                if(players[i].disconnected){
+                    games.forEach(function(game){
+                        game.players.forEach(pl => {
+                            if(pl.access_token == players[i].access_token)
+                            {
+                                game.endgame(-1);
+                            }
+                        });
                     });
-                });
-                players.splice(i,1);
+                    players.splice(i,1);
+                }
             }, 10000);
         }
     });
