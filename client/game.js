@@ -163,6 +163,7 @@ Gameobject.Game.prototype = {
         //deck.inputEnabled = true;
         if(middlecard.type == 0)
         {
+            console.log("test2");
             switch (middlecard.color) {
                 case 0:
                     midcard.tint = 0xff0000;
@@ -449,6 +450,7 @@ function PlayerPlayedMiddleCardTwennCallback(card,tween)
     console.log(middlecard);
     if(middlecard.type == 0)
     {
+        console.log("test1");
         switch (middlecard.color) {
             case 0:
                 midcard.tint = 0xff0000;
@@ -465,6 +467,10 @@ function PlayerPlayedMiddleCardTwennCallback(card,tween)
             default:
                 break;
         }
+    }
+    else
+    {
+        midcard.tint = 0xffffff
     }
     card.destroy();
 }
@@ -563,9 +569,11 @@ function ChangeMiddleCard(card,tween,i)
     console.log(i);
     console.log(cardss[i].data.filename);
     midcard.loadTexture('cards',cardss[i].data.filename);
+    middlecard = cardss[i].data;
     console.log(middlecard);
     if(middlecard.type == 0)
     {
+        console.log("test3");
         switch (middlecard.color) {
             case 0:
                 midcard.tint = 0xff0000;
@@ -583,6 +591,10 @@ function ChangeMiddleCard(card,tween,i)
                 break;
         }
     }
+    else
+    {
+        midcard.tint = 0xffffff
+    }
     cardss[i].destroy();
     cardss.splice(i,1);
 }
@@ -594,28 +606,10 @@ function CardCanBePlayed(playerCard)
     {
         if(playerCard.color === middlecard.color)
             return true;
-        else if(playerCard.value === middlecard.value && playerCard.type === middlecard.type)
+        if(playerCard.value === middlecard.value && playerCard.type === middlecard.type)
             return true;
     }
     return false;
-}
-function ColorChosen(val,json)
-{
-    var obj = JSON.parse(json);
-    $.fancybox.close();
-    console.log(val);
-    obj.card.color = val;
-    socket.emit("played",obj);
-    var i;
-    for(i = 0;i<cardss.length;i++)
-    {
-        if(obj.card.filename == cardss[i].data.filename)
-            break;
-    }
-    console.log(i);
-    cardss[i].destroy();
-    cardss.splice(i,1);
-    CanPlay = false;
 }
 function arrangeCards()
 {

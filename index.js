@@ -1,4 +1,4 @@
-//require('dotenv').config();
+require('dotenv').config();
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
 //import express.js 
@@ -22,12 +22,12 @@ var serv = require('http').Server(app); //Server-11
 
 //import postgres
 const { Client } = require('pg');
-//const db = new Client();
+const db = new Client();
 
-const db = new Client({
+/*const db = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: true,
-}); 
+}); */
 //connect to database
 db.connect();
 
@@ -316,6 +316,7 @@ io.sockets.on('connection', function(socket){
                             }
                         });
                     });
+                    console.log(players[i].db.username)
                     players.splice(i,1);
                 }
             }, 10000);
