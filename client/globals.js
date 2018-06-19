@@ -1,3 +1,4 @@
+var DoStuff = false;
 var socket; // define a global variable called socket 
 var game;
 var Gameobject = {};

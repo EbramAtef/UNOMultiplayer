@@ -248,7 +248,7 @@ io.sockets.on('connection', function(socket){
                         if(players[i].db.username == data.username)
                         {
                             index = i;
-                            break;
+
                         }
                     }
                     if(index == -1)
@@ -264,6 +264,30 @@ io.sockets.on('connection', function(socket){
                             conn.setdb(res.rows[0]);
                             players.push(conn);
                         });
+                    }
+                    else
+                    {
+                        require('crypto').randomBytes(48, function(err, buffer) {
+                            var token = buffer.toString('hex');
+                            players[index].socket.disconnect();
+                            players[index].disconnected = false;
+                            players[index].socket = socket;
+                            players[index].access_token = token;
+                            socket.emit("logged", {
+                                access_token : players[index].access_token
+                            });
+                            games.forEach(function(game) {
+                                game.players.forEach(function(player){
+                                    if(player.access_token ==  players[index].access_token)
+                                    {
+                                        player.socket = socket;
+                                        game.recconected(token);
+                                    }
+                                });        
+                            });
+                            return;
+                        });
+
                     }
                 }else
                 {
@@ -283,18 +307,18 @@ io.sockets.on('connection', function(socket){
                 socket.emit("logged", {
                     access_token : data.access_token
                 });
-                break;
+                games.forEach(function(game) {
+                    game.players.forEach(function(player){
+                        if(player.access_token ==  data.access_token)
+                        {
+                            player.socket = socket;
+                            game.recconected(data.access_token);
+                        }
+                    });        
+                });
+                return;
             }
         }
-        games.forEach(function(game) {
-            game.players.forEach(function(player){
-                if(player.access_token ==  data.access_token)
-                {
-                    player.socket = socket;
-                    game.recconected(data.access_token);
-                }
-            });        
-        });
     });
     socket.on('disconnect', function() {
         for(var i = 0;i<players.length;i++)

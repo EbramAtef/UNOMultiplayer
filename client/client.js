@@ -1,8 +1,3 @@
-socket = io.connect(); // send a connection request to the server
-socket.on("connect", function()
-{
-    console.log("connected to server");
-});
 function login()
 {
     console.log("clicked");
@@ -15,6 +10,12 @@ function login()
         });
     }
 }
+socket = io.connect(); // send a connection request to the server
+socket.on("connect", function()
+{
+    console.log("connected to server");
+    DoStuff = true;
+});
 socket.on("logged", function(data)
 {
     access_token = data.access_token;
@@ -24,6 +25,10 @@ socket.on("logged", function(data)
     game.state.start("Waiting");
 
 });
+socket.on("disconnect",function(){
+    game.state.start("MainMenu");
+    message("Dissconected From the Server");
+})
 socket.on("Started", function(data)
 {
     console.log(data);

@@ -19,11 +19,15 @@ Gameobject.Boot.prototype = {
         this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
-        if (sessionStorage.access_token !== undefined) {
-            console.log("recconec");
-            socket.emit("reconect",{
-                access_token:sessionStorage.access_token
-            });
+        if(DoStuff)
+        {
+            if (sessionStorage.access_token !== undefined) {
+                console.log("recconec");
+                socket.emit("reconect",{
+                    access_token:sessionStorage.access_token
+                });
+            }
+            DoStuff = false;
         }
         game.state.start("MainMenu");
     },
@@ -131,6 +135,7 @@ Gameobject.Game.prototype = {
     },
     create:function()
     {
+        console.log("Game");
         this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
