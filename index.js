@@ -230,6 +230,17 @@ io.sockets.on('connection', function(socket){
     console.log("socket connected"); 
 	//output a unique socket.id 
     console.log(socket.id);
+    socket.on("FBlogin",function(data){
+        //TODO verfiy the accessToken
+        socket.emit("logged", {
+            access_token : data.access_token,
+        });
+        conn.setaccess(data.access_token);
+        conn.setname(data.username);
+        conn.setdb({id:data.user_id,username : data.username});
+        conn.imgUrl = data.img_url;
+        players.push(conn);
+    });
     socket.on('login',function(data){
         console.log(data.username);
         text = 'Select * from users where username = $1';
@@ -262,6 +273,7 @@ io.sockets.on('connection', function(socket){
                             conn.setaccess(token);
                             conn.setname(data.username);
                             conn.setdb(res.rows[0]);
+                            conn.imgUrl = "client/img/user.png";
                             players.push(conn);
                         });
                     }

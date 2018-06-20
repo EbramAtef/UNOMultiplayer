@@ -156,7 +156,8 @@ module.exports = class Game {
             var temp = {
                 username : player.db.username,
                 cards : player.cards.length,
-                order : player.order
+                order : player.order,
+                img : player.imgUrl
             };
             index++;
             players_minfied.push(temp);
@@ -219,7 +220,8 @@ module.exports = class Game {
             var temp = {
                 username : player.db.username,
                 cards : player.cards.length,
-                order : player.order
+                order : player.order,
+                img : player.imgUrl
             };
             pl.push(temp);
         });

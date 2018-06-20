@@ -10,6 +10,44 @@ function login()
         });
     }
 }
+function FB_Login(response)
+{   
+    console.log(response);
+    if (response.status === 'connected') {
+        FBLoginToServer();
+    }
+}
+function FBLoginSequence()
+{
+    if(FB != undefined)
+    {
+        FB.login(function(response){
+            console.log(response);
+            if (response.status === 'connected') {
+                FBLoginToServer();
+            }
+        });
+    }
+}
+function FBLoginToServer()
+{
+    if(FB != undefined)
+    {
+        FB.api('me?fields=id,name', function(response) {
+            var username = response.name;
+            var id = response.id;
+            FB.api(response.id+'/picture', {redirect: 0,heigth:256,width:256} ,function(response) {
+                var img = response.data.url;
+                socket.emit("FBlogin",{
+                    access_token:FB.getAccessToken(),
+                    username:username,
+                    img_url:img,
+                    user_id:id
+                });
+            });
+        });
+    }
+}
 socket = io.connect(); // send a connection request to the server
 socket.on("connect", function()
 {

@@ -11,6 +11,7 @@ Gameobject.Boot.prototype = {
         game.load.image('background', 'client/img/background.jpg');
         game.load.image('logo', 'client/img/logo.png');
         game.load.image('Login', 'client/img/button.png');
+        game.load.image('fb', 'client/img/fb.png');
         this.game.plugins.add(PhaserInput.Plugin);
     },
     create:function()
@@ -26,6 +27,10 @@ Gameobject.Boot.prototype = {
                 socket.emit("reconect",{
                     access_token:sessionStorage.access_token
                 });
+            }
+            else
+            {
+                FB.getLoginStatus(FB_Login);
             }
             DoStuff = false;
         }
@@ -93,6 +98,10 @@ Gameobject.MainMenu.prototype = {
         button = game.add.button(game.world.centerX - 97, h, 'Login', actionOnClick, this, 2, 1, 0);
         button.width  = 194;
         button.height = 50;
+        h+=button.height+20;
+        button = game.add.button(game.world.centerX - 97, h, 'fb', FBLoginSequence, this, 2, 1, 0);
+        button.width  = 194;
+        button.height = 50;
     },
     update:function()
     {
@@ -128,6 +137,10 @@ Gameobject.Game.prototype = {
         game.load.atlas('cards', 'client/img/cards.png', 'client/img/cards.json');
         game.load.image('back', 'client/img/back.png');
         game.load.image('avatar', 'client/img/user.png');
+        game.load.image('mask', 'client/img/user_image_mask.png');
+        players.forEach(function(player){
+            game.load.image(player.username.replace(/\s/g, ""), player.img);
+        });
         game.load.image('unobutton', 'client/img/uno_button.png');
         game.load.image('unobuttonPressed', 'client/img/uno_buttonPressed.png');        
         game.load.image('passbutton', 'client/img/pass_button.png');
@@ -191,8 +204,10 @@ Gameobject.Game.prototype = {
                 pl[0] = {};
                 pl[0].username = players[0].username;
                 var x = game.world.centerX;
-                var y = 0
-                var img0 = game.add.sprite(x,y,'avatar');
+                var y = 0;
+                var bmd = game.make.bitmapData(256, 256);
+                bmd.alphaMask(players[0].username.replace(/\s/g, ""), 'mask');
+                var img0 = game.add.image(x,y, bmd);
                 img0.width=canvas_width/8;
                 img0.height=canvas_width/8;
                 img0.x -= img0.width/2;
@@ -220,7 +235,9 @@ Gameobject.Game.prototype = {
                 pl[1].username = player.username;
                 x = game.width - 256;
                 y = 0;
-                var img2 = game.add.sprite(x,y,'avatar');
+                var bmd = game.make.bitmapData(256, 256);
+                bmd.alphaMask(player.username.replace(/\s/g, ""), 'mask');
+                var img2 = game.add.image(x,y,bmd);
                 img2.width=canvas_width/8;
                 img2.height=canvas_width/8;
                 y += img2.height+10;
@@ -246,7 +263,9 @@ Gameobject.Game.prototype = {
                 pl[0].username = player.username;
                 var x = 0;
                 var y = 0;
-                var img = game.add.sprite(x,y,'avatar');
+                bmd = game.make.bitmapData(256, 256);
+                bmd.alphaMask(player.username.replace(/\s/g, ""), 'mask');
+                var img = game.add.image(x,y,bmd);
                 img.width=canvas_width/8;
                 img.height=canvas_width/8;
                 y += img.height+10;
@@ -273,7 +292,9 @@ Gameobject.Game.prototype = {
                 pl[0].username = player.username;
                 var x = game.width - 256;
                 var y = 20;
-                var img2 = game.add.sprite(x,y,'avatar');
+                var bmd = game.make.bitmapData(256, 256);
+                bmd.alphaMask(player.username.replace(/\s/g, ""), 'mask');
+                var img2 = game.add.image(x,y,bmd);
                 img2.width=canvas_width/8;
                 img2.height=canvas_width/8;
                 y += img2.height+20;
@@ -299,7 +320,9 @@ Gameobject.Game.prototype = {
                 pl[1].username = player.username;
                 x = game.world.centerX;
                 y = 0
-                var img0 = game.add.sprite(x,y,'avatar');
+                var bmd = game.make.bitmapData(256, 256);
+                bmd.alphaMask(player.username.replace(/\s/g, ""), 'mask');
+                var img0 = game.add.image(x,y,bmd);
                 img0.width=canvas_width/8;
                 img0.height=canvas_width/8;
                 img0.x -= img0.width/2;
@@ -325,7 +348,9 @@ Gameobject.Game.prototype = {
                 pl[2].username = player.username;
                 x = 0;
                 y = 20;
-                var img = game.add.sprite(x,y,'avatar');
+                bmd = game.make.bitmapData(256, 256);
+                bmd.alphaMask(player.username.replace(/\s/g, ""), 'mask');
+                var img = game.add.image(x,y,bmd);
                 img.width=canvas_width/8;
                 img.height=canvas_width/8;
                 y += img.height+20;
