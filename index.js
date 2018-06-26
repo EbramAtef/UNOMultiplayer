@@ -333,7 +333,8 @@ io.sockets.on('connection', function(socket){
         }
     });
     socket.on('disconnect', function() {
-        for(var i = 0;i<players.length;i++)
+        var i;
+        for(i = 0;i<players.length;i++)
         {
             if(players[i].socket.id == socket.id)
                 break;

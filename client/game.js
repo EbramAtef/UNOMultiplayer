@@ -4,14 +4,14 @@ var deck;
 var UNOFlag = false;
 var LastCardCount = 0;
 var midcard;
+var Loading_text;
+var loadCompleted = false;
 Gameobject.Boot = function(game){};
 Gameobject.Boot.prototype = {
     preload:function()
     {
-        game.load.image('background', 'client/img/background.jpg');
-        game.load.image('logo', 'client/img/logo.png');
-        game.load.image('Login', 'client/img/button.png');
-        game.load.image('fb', 'client/img/fb.png');
+        game.load.onFileComplete.add(fileComplete, this);
+        game.load.onLoadComplete.add(loadComplete, this);
         this.game.plugins.add(PhaserInput.Plugin);
     },
     create:function()
@@ -20,6 +20,11 @@ Gameobject.Boot.prototype = {
         this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         this.scale.pageAlignHorizontally = true;
         this.scale.pageAlignVertically = true;
+        Loading_text = game.add.text(canvas_width/2, canvas_height/2, " ", { fill: '#ffffff' });
+        Loading_text.x -= Loading_text.width/2;
+        Loading_text.y -= Loading_text.height/2;
+        start();
+
         if(DoStuff)
         {
             if (sessionStorage.access_token !== undefined) {
@@ -34,13 +39,44 @@ Gameobject.Boot.prototype = {
             }
             DoStuff = false;
         }
-        game.state.start("MainMenu");
+
     },
     update:function()
     {
-        
+        if(loadCompleted)
+        {
+            loadCompleted = false;
+            game.state.start("MainMenu");
+        }
     }
 }
+function start() {
+
+    game.load.image('background', 'client/img/background.jpg');
+    game.load.image('logo', 'client/img/logo.png');
+    game.load.image('Login', 'client/img/button.png');
+    game.load.image('fb', 'client/img/fb.png');
+    game.load.atlas('cards', 'client/img/cards.png', 'client/img/cards.json');
+    game.load.image('back', 'client/img/back.png');
+    game.load.image('avatar', 'client/img/user.png');
+    game.load.image('mask', 'client/img/user_image_mask.png');
+    game.load.image('unobutton', 'client/img/uno_button.png');
+    game.load.image('unobuttonPressed', 'client/img/uno_buttonPressed.png');        
+    game.load.image('passbutton', 'client/img/pass_button.png');
+    game.load.image('passbuttonPressed', 'client/img/pass_buttonPressed.png');
+
+    game.load.start();
+}
+function loadComplete() {
+    loadCompleted = true;
+}
+//	This callback is sent the following parameters:
+function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles) {
+
+	Loading_text.setText("File Complete: " + progress + "%");
+    Loading_text.x = canvas_width/2 - Loading_text.width/2;
+    Loading_text.y = canvas_height/2 - Loading_text.height/2;
+} 
 
 
 Gameobject.MainMenu = function(game){};
@@ -134,17 +170,9 @@ Gameobject.Game = function(game){};
 Gameobject.Game.prototype = {
     preload:function()
     {
-        game.load.atlas('cards', 'client/img/cards.png', 'client/img/cards.json');
-        game.load.image('back', 'client/img/back.png');
-        game.load.image('avatar', 'client/img/user.png');
-        game.load.image('mask', 'client/img/user_image_mask.png');
         players.forEach(function(player){
             game.load.image(player.username.replace(/\s/g, ""), player.img);
         });
-        game.load.image('unobutton', 'client/img/uno_button.png');
-        game.load.image('unobuttonPressed', 'client/img/uno_buttonPressed.png');        
-        game.load.image('passbutton', 'client/img/pass_button.png');
-        game.load.image('passbuttonPressed', 'client/img/pass_buttonPressed.png');
     },
     create:function()
     {
