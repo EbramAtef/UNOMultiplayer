@@ -6,6 +6,7 @@ var LastCardCount = 0;
 var midcard;
 var Loading_text;
 var loadCompleted = false;
+var AfterLoadCompleteState = "MainMenu";
 Gameobject.Boot = function(game){};
 Gameobject.Boot.prototype = {
     preload:function()
@@ -24,29 +25,14 @@ Gameobject.Boot.prototype = {
         Loading_text.x -= Loading_text.width/2;
         Loading_text.y -= Loading_text.height/2;
         start();
-
-        if(DoStuff)
-        {
-            if (sessionStorage.access_token !== undefined) {
-                console.log("recconec");
-                socket.emit("reconect",{
-                    access_token:sessionStorage.access_token
-                });
-            }
-            else
-            {
-                FB.getLoginStatus(FB_Login);
-            }
-            DoStuff = false;
-        }
-
     },
     update:function()
     {
-        if(loadCompleted)
+        if(loadCompleted && AfterLoadCompleteState != null)
         {
             loadCompleted = false;
-            game.state.start("MainMenu");
+            game.state.start(AfterLoadCompleteState);
+            AfterLoadCompleteState = null;
         }
     }
 }
@@ -159,6 +145,7 @@ Gameobject.Waiting.prototype = {
         background.y = 0;
         background.height = game.height;
         background.width = game.width;
+        socket.emit("RequestGame",{access_token : access_token});
     },
     update:function()
     {

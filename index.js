@@ -1,4 +1,4 @@
-//require('dotenv').config();
+require('dotenv').config();
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
 //import express.js 
@@ -22,12 +22,12 @@ var serv = require('http').Server(app); //Server-11
 
 //import postgres
 const { Client } = require('pg');
-//const db = new Client();
+const db = new Client();
 
-const db = new Client({
+/*const db = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: true,
-});
+});*/
 //connect to database
 db.connect();
 
@@ -228,8 +228,6 @@ var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
     var conn = new Player(socket);
     console.log("socket connected"); 
-	//output a unique socket.id 
-    console.log(socket.id);
     socket.on("FBlogin",function(data){
         //TODO verfiy the accessToken
         socket.emit("logged", {
@@ -242,15 +240,12 @@ io.sockets.on('connection', function(socket){
         players.push(conn);
     });
     socket.on('login',function(data){
-        console.log(data.username);
         text = 'Select * from users where username = $1';
         values = [data.username];
         db.query(text, values, (err, res) => {
             if (err) {
             console.log(err.stack)
             } else if(res.rows[0]){
-                console.log(res.rows[0].pass);
-                console.log(data.password);
                 if(res.rows[0].pass === data.password)
                 {
                     var index = -1;
@@ -264,7 +259,6 @@ io.sockets.on('connection', function(socket){
                     }
                     if(index == -1)
                     {
-                        console.log("logged");
                         require('crypto').randomBytes(48, function(err, buffer) {
                             var token = buffer.toString('hex');
                             socket.emit("logged", {
@@ -274,6 +268,7 @@ io.sockets.on('connection', function(socket){
                             conn.setname(data.username);
                             conn.setdb(res.rows[0]);
                             conn.imgUrl = "client/img/user.png";
+                            console.log("Player "+data.username+" Logged");
                             players.push(conn);
                         });
                     }
@@ -297,6 +292,7 @@ io.sockets.on('connection', function(socket){
                                     }
                                 });        
                             });
+                            console.log("Player "+data.username+" ReLogged");
                             return;
                         });
 
@@ -319,44 +315,48 @@ io.sockets.on('connection', function(socket){
                 socket.emit("logged", {
                     access_token : data.access_token
                 });
-                games.forEach(function(game) {
-                    game.players.forEach(function(player){
-                        if(player.access_token ==  data.access_token)
-                        {
-                            player.socket = socket;
-                            game.recconected(data.access_token);
-                        }
-                    });        
-                });
+                console.log("Player "+players[i].db.username+"has Recconnected");
                 return;
             }
         }
     });
-    socket.on('disconnect', function() {
-        var i;
-        for(i = 0;i<players.length;i++)
-        {
-            if(players[i].socket.id == socket.id)
-                break;
-        }
-        if(i != players.length)
-        {
-            players[i].disconnected = true;
-            players[i].disconnect = setTimeout(function(){
-                console.log(i);
-                if(players[i].disconnected){
-                    games.forEach(function(game){
-                        game.players.forEach(pl => {
-                            if(pl.access_token == players[i].access_token)
-                            {
-                                game.endgame(-1);
-                            }
-                        });
-                    });
-                    console.log(players[i].db.username)
-                    players.splice(i,1);
+    socket.on("RequestGame",function(data)
+    {
+        games.forEach(function(game) {
+            game.players.forEach(function(player){
+                if(player.access_token ==  data.access_token)
+                {
+                    player.socket = socket;
+                    game.recconected(data.access_token);
                 }
-            }, 10000);
+            });        
+        });
+    });
+    socket.on('disconnect', function() {
+        var i = getIndexOfPlayerBySocketId(socket.id);
+        if(i != -1)
+        {
+            var username = players[i].db.username;
+            players[i].disconnected = true;
+            console.log("Player "+players[i].db.username+" has been set on a timeout");
+            players[i].disconnect = setTimeout(function(){
+                var index = getIndexOfPlayerByUsername(username);
+                if(index != -1)
+                {
+                    if(players[index].disconnected){
+                        games.forEach(function(game){
+                            game.players.forEach(pl => {
+                                if(pl.access_token == players[index].access_token)
+                                {
+                                    game.endgame(-1);
+                                }
+                            });
+                        });
+                        console.log("Player "+players[index].db.username+" has been disconnected from the server");
+                        players.splice(index,1);
+                    }
+                }
+            }, 60000);
         }
     });
 
@@ -385,7 +385,45 @@ io.sockets.on('connection', function(socket){
         })
     });
 });
-function deleteplayer()
+function getIndexOfPlayerByUsername(username)
 {
-
+    var i;
+    for(i = 0;i<players.length;i++)
+    {
+        if(players[i].db.username == username)
+            break;
+    }
+    if(i == players.length)
+    {
+        return -1;
+    }
+    return i;
+}
+function getIndexOfPlayerByAccessToken(access_token)
+{
+    var i;
+    for(i = 0;i<players.length;i++)
+    {
+        if(players[i].access_token == access_token)
+            break;
+    }
+    if(i == players.length)
+    {
+        return -1;
+    }
+    return i;
+}
+function getIndexOfPlayerBySocketId(id)
+{
+    var i;
+    for(i = 0;i<players.length;i++)
+    {
+        if(players[i].socket.id == id)
+            break;
+    }
+    if(i == players.length)
+    {
+        return -1;
+    }
+    return i;
 }

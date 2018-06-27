@@ -149,10 +149,9 @@ module.exports = class Game {
                 pl_cards.push(this.cards[0]);
                 this.cards.shift();
             }
-            console.log(this.cards.length);
             player.cards = pl_cards;
             player.order = index;
-            console.log(player.db.username + " " + player.order)
+            console.log(player.order+ ":" + player.db.username )
             var temp = {
                 username : player.db.username,
                 cards : player.cards.length,

@@ -52,16 +52,25 @@ socket = io.connect(); // send a connection request to the server
 socket.on("connect", function()
 {
     console.log("connected to server");
-    DoStuff = true;
+    if (localStorage.access_token !== undefined) {
+        console.log("recconec");
+        socket.emit("reconect",{
+            access_token:localStorage.access_token
+        });
+    }
+    else
+    {
+        FB.getLoginStatus(FB_Login);
+    }
 });
 socket.on("logged", function(data)
 {
     access_token = data.access_token;
     console.log("logged");
     console.log(access_token);
-    sessionStorage.access_token=access_token;
-    game.state.start("Waiting");
-
+    localStorage.access_token=access_token;
+    AfterLoadCompleteState = "Waiting";
+    game.state.start("Boot");
 });
 socket.on("disconnect",function(){
     game.state.start("MainMenu");
@@ -122,7 +131,6 @@ socket.on("PlayerDrawedACard",function(data){
 });
 socket.on("GameEnded",function(data){
     message("PLayer "+data.WhoWon+" won the game with score "+data.score);
-    alert("PLayer "+data.WhoWon+" won the game with score "+data.score);
     game.state.start("Waiting");
 });
 socket.on("UNOBroadCast",function(data){
@@ -132,7 +140,6 @@ socket.on("UNOBroadCast",function(data){
 socket.on("ServerEndedGame",function()
 {
     message("server ended the game");
-    alert("server ended the game");
     game.state.start("Waiting");
 });
 function message(msg)
